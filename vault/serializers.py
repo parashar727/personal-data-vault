@@ -17,6 +17,11 @@ class VaultSerializer(serializers.ModelSerializer):
 
 class VaultItemSerializer(serializers.ModelSerializer):
     data = serializers.JSONField(write_only=True)
+    item_type = serializers.ChoiceField(
+        choices=VaultItem.ITEM_CHOICES,
+        default="LOG"
+    )
+    metadata = serializers.JSONField(required=False)
 
     class Meta:
         model = VaultItem
@@ -35,16 +40,28 @@ class VaultItemSerializer(serializers.ModelSerializer):
 
         if data is not None:
             if item_type == "LOG":
-                if not data.get("email") or not data.get("password"):
+                email = data.get("email")
+                password = data.get("password")
+                if not email or not password:
                     raise serializers.ValidationError(
                         {"data": "Email and Password fields are mandatory in Login items."}
                     )
 
+                attrs["data"] = {
+                    "email" : email,
+                    "password" : password
+                }
+
             elif item_type == "NOT":
-                if not data.get("content"):
+                content = data.get("content")
+                if not content:
                     raise serializers.ValidationError(
                         {"data": "Content field is mandatory in Note type items."}
                 )
+
+                attrs["data"] = {
+                    "content" : content
+                }
 
         return attrs
 
