@@ -1,0 +1,3 @@
+# Personal Data Vault
+
+A secure personal data management backend built with Django and Django REST Framework to centralize sensitive information. The system currently implements robust user isolation and JWT-based authentication to ensure that data remains strictly private to its owner. It features dynamic validation and sanitization for different data types, such as login credentials and private notes, to maintain high data integrity. This project serves as a foundational architecture for a field-level encrypted storage system.
