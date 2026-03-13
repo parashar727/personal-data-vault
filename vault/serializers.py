@@ -2,6 +2,8 @@ from rest_framework import serializers
 from .models import Vault, VaultItem
 import json
 
+from vault.services.encryption import encrypt_data, decrypt_data
+
 class VaultSerializer(serializers.ModelSerializer):
 
 
@@ -68,7 +70,10 @@ class VaultItemSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         data = validated_data.pop("data")
 
-        validated_data["encrypted_data"] = json.dumps(data) #Implement encryption later, just plaintext JSON string for now
+        # Encrypt incoming data dictionary
+        encrypted = encrypt_data(data)
+
+        validated_data["encrypted_data"] = encrypted
 
         return super().create(validated_data)
 
@@ -76,6 +81,17 @@ class VaultItemSerializer(serializers.ModelSerializer):
         if "data" in validated_data:
             data = validated_data.pop("data")
 
-            validated_data["encrypted_data"] = json.dumps(data)
+            validated_data["encrypted_data"] = encrypt_data(data)
 
         return super().update(instance, validated_data)
+
+
+    #Returns decrypted data dictionary
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+
+        if instance.encrypted_data:
+            decrypted = decrypt_data(instance.encrypted_data)
+            representation["data"] = decrypted
+
+        return representation
