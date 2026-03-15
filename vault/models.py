@@ -20,13 +20,21 @@ class VaultItem(models.Model):
     ITEM_CHOICES = [
         ("LOG", "Login"),
         ("NOT", "Note"),
+        ("DOC", "Document"),
     ]
 
     item_type = models.CharField(max_length=3, choices=ITEM_CHOICES, default="LOG")
 
     encrypted_data = models.TextField()
 
+    item_file = models.FileField(upload_to="vault_files/", null=True, blank=True)
+
     metadata = models.JSONField(blank=True, null=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def delete(self, *args, **kwargs):
+        if self.item_file:
+            self.item_file.delete(save=False)
+        super().delete(*args, **kwargs)

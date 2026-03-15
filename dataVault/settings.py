@@ -139,7 +139,7 @@ REST_FRAMEWORK = {
 
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': datetime.timedelta(minutes=50), #Set to 5 for prod, changed to 50 for testing
+    'ACCESS_TOKEN_LIFETIME': datetime.timedelta(minutes=60), #Set to 5 for prod, changed to 60 for testing
     'REFRESH_TOKEN_LIFETIME': datetime.timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': True,
     'BLACKLIST_AFTER_ROTATION': True,
@@ -147,3 +147,6 @@ SIMPLE_JWT = {
 }
 
 VAULT_ENCRYPTION_KEY = config('ENC_KEY') #Use fernet to generate encryption key and put in .env file
+
+MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = "/media/"
