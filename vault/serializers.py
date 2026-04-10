@@ -1,3 +1,4 @@
+import os
 import uuid
 
 from django.core.files.base import ContentFile
@@ -13,7 +14,7 @@ class VaultSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Vault
-        fields = ('name',)
+        fields = ('id', 'name')
 
     def create(self, validated_data):
         return Vault.objects.create(
@@ -32,7 +33,7 @@ class VaultItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = VaultItem
-        fields = ('vault', 'title', 'item_type', 'data', 'item_file' , 'metadata')
+        fields = ('id', 'vault', 'title', 'item_type', 'data', 'item_file' , 'metadata')
 
     def validate(self, attrs):
         request = self.context.get("request")
@@ -50,6 +51,21 @@ class VaultItemSerializer(serializers.ModelSerializer):
             if not item_file:
                 raise serializers.ValidationError(
                     { "item_file": "File is mandatory for Document items." }
+                )
+
+            # File size validation
+            max_size = 10 * 1024 * 1024
+            if item_file.size > max_size:
+                raise serializers.ValidationError(
+                    { "item_file": "File size exceeds the 10MB limit." }
+                )
+
+            #File type validation
+            allowed_extensions = ['.pdf', '.docx']
+            ext = os.path.splitext(item_file.name)[1].lower()
+            if ext not in allowed_extensions:
+                raise serializers.ValidationError(
+                    { "item_file": f"Unsupported file type. Allowed: {', '.join(allowed_extensions)}" }
                 )
 
         elif item_type in ["LOG", "NOT"]:
@@ -109,7 +125,7 @@ class VaultItemSerializer(serializers.ModelSerializer):
             validated_data["item_file"] = encrypted_file
 
             validated_data["metadata"] = {
-                "original name": file.name,
+                "original_name": file.name,
                 "size": file.size,
                 "content_type": file.content_type
             }
@@ -155,8 +171,16 @@ class VaultItemSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         representation = super().to_representation(instance)
 
-        if instance.encrypted_data:
-            decrypted = decrypt_data(instance.encrypted_data)
-            representation["data"] = decrypted
+        view = self.context.get("view")
+
+        if view and view.action == "retrieve":
+            if instance.encrypted_data:
+                try:
+                    decrypted = decrypt_data(instance.encrypted_data)
+                except Exception:
+                    representation["data"] = {"error": "Decryption failed. Data may be corrupted or key is invalid."}
+                representation["data"] = decrypted
+        else:
+            representation.pop("data", None)
 
         return representation
