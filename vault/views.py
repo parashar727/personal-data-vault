@@ -51,6 +51,16 @@ class VaultViewSet(ModelViewSet):
             status=status.HTTP_200_OK
         )
 
+    @action(detail=False, methods=["get"])
+    def trash(self, request):
+        """
+        Returns list of all soft-deleted vaults that belong to the user
+        """
+        deleted_vaults = Vault.all_objects.filter(owner=request.user, deleted_at__isnull=False)
+
+        serializer = self.get_serializer(deleted_vaults, many=True)
+        return Response(serializer.data)
+
 
 class VaultItemViewSet(ModelViewSet):
     serializer_class = VaultItemSerializer
@@ -115,3 +125,13 @@ class VaultItemViewSet(ModelViewSet):
             {"detail": "Item restored successfully."},
             status=status.HTTP_200_OK
         )
+
+    @action(detail=True, methods=["get"])
+    def trash(self, request):
+        """
+        Returns list of all soft-deleted items that belong to the user
+        """
+        deleted_items = VaultItem.all_objects.filter(vault__owner=request.user, deleted_at__isnull=False)
+
+        serializer = self.get_serializer(deleted_items, many=True)
+        return Response(serializer.data)
